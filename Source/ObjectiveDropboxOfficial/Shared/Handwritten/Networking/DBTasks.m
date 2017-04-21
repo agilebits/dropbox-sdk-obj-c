@@ -323,7 +323,12 @@
       } else {
         NSError *fileMoveErrorToDestination;
 
-        [fileManager moveItemAtPath:[location path] toPath:destinationPath error:&fileMoveErrorToDestination];
+        if (destinationPath == nil) {
+          NSLog(@"%s Destination path was nil when trying to move item at path: %@", __PRETTY_FUNCTION__, [location path]);
+        }
+        else {
+          [fileManager moveItemAtPath:[location path] toPath:destinationPath error:&fileMoveErrorToDestination];
+        }
 
         if (fileMoveErrorToDestination) {
           networkError = [[DBRequestError alloc] initAsClientError:fileMoveErrorToDestination];
