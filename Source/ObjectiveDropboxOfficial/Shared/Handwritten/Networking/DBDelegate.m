@@ -8,18 +8,23 @@
 
 #pragma mark - Initializers
 
-@implementation DBDelegate {
-  NSOperationQueue *_delegateQueue;
-  NSMutableDictionary<NSString *, DBSessionData *> *_sessionData;
-}
+@interface DBDelegate ()
+
+@property NSOperationQueue *delegateQueue;
+@property NSMutableDictionary<NSString *, DBSessionData *> *sessionData;
+
+@end
+
+@implementation DBDelegate
 
 - (instancetype)initWithQueue:(NSOperationQueue *)delegateQueue {
   self = [super init];
   if (self) {
     _delegateQueue = delegateQueue ?: [NSOperationQueue new];
     [_delegateQueue setMaxConcurrentOperationCount:1];
-    _sessionData = [NSMutableDictionary new];
+    _sessionData = [[NSMutableDictionary alloc] init];
   }
+
   return self;
 }
 
@@ -207,7 +212,7 @@
                    session:(NSURLSession *)session
            progressHandler:(void (^)(int64_t, int64_t, int64_t))handler
       progressHandlerQueue:(NSOperationQueue *)handlerQueue {
-  [_delegateQueue addOperationWithBlock:^{
+  [self.delegateQueue addOperationWithBlock:^{
     NSNumber *taskId = @(task.taskIdentifier);
 
     DBSessionData *sessionData = [self sessionDataWithSession:session];
@@ -234,7 +239,7 @@
                       session:(NSURLSession *)session
               responseHandler:(DBRpcResponseBlockStorage)handler
          responseHandlerQueue:(NSOperationQueue *)handlerQueue {
-  [_delegateQueue addOperationWithBlock:^{
+  [self.delegateQueue addOperationWithBlock:^{
     NSNumber *taskId = @(task.taskIdentifier);
     DBSessionData *sessionData = [self sessionDataWithSession:session];
 
@@ -266,7 +271,7 @@
                          session:(NSURLSession *)session
                  responseHandler:(DBUploadResponseBlockStorage)handler
             responseHandlerQueue:(NSOperationQueue *)handlerQueue {
-  [_delegateQueue addOperationWithBlock:^{
+  [self.delegateQueue addOperationWithBlock:^{
     NSNumber *taskId = @(task.taskIdentifier);
     DBSessionData *sessionData = [self sessionDataWithSession:session];
 
@@ -298,7 +303,7 @@
                            session:(NSURLSession *)session
                    responseHandler:(DBDownloadResponseBlockStorage)handler
               responseHandlerQueue:(NSOperationQueue *)handlerQueue {
-  [_delegateQueue addOperationWithBlock:^{
+  [self.delegateQueue addOperationWithBlock:^{
     NSNumber *taskId = @(task.taskIdentifier);
     DBSessionData *sessionData = [self sessionDataWithSession:session];
 
@@ -330,10 +335,15 @@
 
 - (DBSessionData *)sessionDataWithSession:(NSURLSession *)session {
   NSString *sessionId = [self sessionIdWithSession:session];
-  if (!_sessionData[sessionId]) {
-    _sessionData[sessionId] = [[DBSessionData alloc] initWithSessionId:sessionId];
+  DBSessionData *sessionData = self.sessionData[sessionId];
+  if (sessionData == nil) {
+    sessionData = [[DBSessionData alloc] initWithSessionId:sessionId];
+    if (sessionData != nil) {
+      self.sessionData[sessionId] = sessionData;
+    }
   }
-  return _sessionData[sessionId];
+
+  return sessionData;
 }
 
 @end
